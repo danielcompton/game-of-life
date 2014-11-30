@@ -1,0 +1,53 @@
+h1 {
+  text-decoration: underline;
+}
+
+.alive {
+  color: blue;
+}
+
+
+.flex-container {
+width: 500px;
+height: 500px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+
+  -webkit-flex-flow: row nowrap;
+  justify-content: space-around;
+}
+
+.column {
+flex: 1;
+display: flex;
+-webkit-flex-flow: column nowrap;
+align-items: stretch;}
+
+.flex-item {
+  background: tomato;
+  padding: 5px;
+  margin: 5px;
+  border: 1px solid #fff000
+
+  /*
+  width: 200px;
+  height: 150px;
+  margin-top: 10px;
+
+  line-height: 150px;
+  color: white;
+  font-weight: bold;
+  font-size: 3em;
+  */
+
+  text-align: center;
+
+  flex-grow: 1;
+}

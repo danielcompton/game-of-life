@@ -1,104 +1,82 @@
 (ns game-of-life.core
   (:require [om.core :as om :include-macros true]
             [om.dom :as dom :include-macros true]
-            [game-of-life.game :as game]))
+            [game-of-life.game :as game]
+            [cljs.core.async :as async :refer [<! >! timeout chan]])
+  (:require-macros [cljs.core.async.macros :refer [go go-loop]]))
 
 (enable-console-print!)
 
-(def app-state (atom {:size          5
-                      :board         [0 0 0 0 0
-                                      0 0 0 0 0
-                                      0 0 1 1 0
-                                      0 0 0 0 0
-                                      0 0 0 0 0]
-                      :click-counter 5}))
+(def app-state (atom {:size  10
+                      :board (vec (repeatedly 100 #(rand-int 2)))
 
-(defn btn-view [cursor _]
-  (reify om/IRender
+                      #_[0 0 0 1 1 1 0 0 0 0
+                              0 0 0 0 0 0 0 0 0 0
+                              0 0 0 0 0 0 0 0 0 0
+                              0 0 0 0 1 0 0 0 0 0
+                              0 0 0 1 1 1 0 0 0 0
+                              0 0 0 0 0 0 1 0 0 0
+                              0 0 0 0 0 0 0 0 0 0
+                              0 0 0 0 1 1 0 0 0 0
+                              0 0 0 0 1 0 0 0 0 0
+                              0 0 0 0 0 0 0 0 0 0
+                              0 0 0 0 0 0 0 0 0 0]
+                      :playing true}))
+
+(defn play-pause [app]
+  (println "App:" app)
+  (update-in app [:playing] false?))
+
+(defn btn-view [cursor]
+  (reify
+    om/IDisplayName
+    (display-name [_] "Button view")
+    om/IWillMount
+    (will-mount [_]
+      (let [c (chan)]
+        (go (while (:playing @cursor)
+              (let [_ (<! (timeout 500))]
+                (om/transact! cursor game/play))))))
+    om/IRender
     (render [_]
       (dom/div nil
-               (dom/span nil (do (println (get cursor :click-counter))
-                                 (println cursor)
-                                 (str "Clicked " (get cursor :click-counter) " times")))
                (dom/button
-                 #js {:onClick (fn [_]
-                                 #_(om/transact! cursor :click-counter inc)
-                                 (om/transact! cursor :board game/play))}
+                 #js {:onClick (fn [_] (om/transact! cursor game/play))}
+                 "Forward")
+               (dom/button
+                 #js {:onClick (fn [_] (om/transact! cursor play-pause))}
                  "Play")))))
 
-(defn flex-item [cell]
+(defn cell [cell]
   (om/component
     (dom/div #js {:className (if (zero? cell) "flex-item" "flex-item alive")}
-             cell)))
+             nil)))
 
-(defn flex-row [cells]
+(defn row [cells]
   (om/component
     (apply dom/div #js {:className "row"}
-           (om/build-all flex-item cells))))
+           (om/build-all cell cells))))
 
 (defn grid [app]
   (reify
+    om/IDisplayName
+    (display-name [_] "Game grid")
     om/IRender
     (render [_]
       (apply dom/div #js {:className "flex-container"}
              (let [size (app :size)
                    start (app :board)]
-               (om/build-all flex-row (partition size start)))))))
+               (om/build-all row (partition size start)))))))
 
 (defn app [app owner]
   (reify
+    om/IDisplayName
+    (display-name [_] "App")
     om/IRender
     (render [_]
       (dom/div nil
-        (om/build grid app)
-        (om/build btn-view app)))))
-
-(defn main []
-  (om/root
-    app
-    app-state
-    {:target (. js/document (getElementById "app"))}))
-
-
-
-;(def app-state
-;  (atom
-;    {:widgets
-;     [{:my-number 16
-;       :text "I'm divisible by 2!"
-;       :grid [1 1 3 5]}
-;      {:my-number 23
-;       :text "I'm not divisible by 2!"}]}))
-;
-;(defmulti even-odd-widget (comp even? :my-number))
-;
-;(defmethod even-odd-widget true
-;  [props owner]
-;  (reify
-;    om/IRender
-;    (render [_]
-;      (dom/div nil
-;               (dom/h2 nil "Even Widget")
-;               (dom/p nil (:text props))
-;               (dom/p nil (pr-str  (:grid props)))))))
-;
-;(defmethod even-odd-widget false
-;  [props owner]
-;  (reify
-;    om/IRender
-;    (render [_]
-;      (dom/div nil
-;               (dom/h2 nil "Odd Widget")
-;               (dom/p nil (:text props))))))
-;
-;(defn app [props owner]
-;  (reify
-;    om/IRender
-;    (render [_]
-;      (apply dom/div nil
-;             (om/build-all even-odd-widget (:widgets props))))))
-
-
+               (om/build grid app)
+               (om/build btn-view app)))))
 
 (defn main []
   (om/root

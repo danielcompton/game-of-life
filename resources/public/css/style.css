@@ -33,8 +33,10 @@ align-items: stretch;}
 .flex-item {
 
   padding: 3px;
-  margin: 2px;
+  margin: 1px;
+  border-radius: 5px;
   border: 1px solid #0f0f0f;
+
 
   /*
   width: 200px;
